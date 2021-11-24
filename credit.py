@@ -469,3 +469,68 @@ for C_value in C_values:
 min_C.append( lowest_err('Random Forest', C_values, train_errs, valid_errs) )
 
 #%%
+
+# Print min C
+min_C = pd.DataFrame(min_C)
+min_C.set_index('Model', inplace=True)
+min_C
+
+# Refit model with both train and valid data
+X_train_valid_e_l_n_up = pd.concat([X_train_e_l_n_up, X_valid_e_l_n_up], axis=0)
+X_train_valid_e_l_n_up.tail()
+
+y_train_valid_e_l_n_up = pd.concat([y_train_up,y_valid_up], axis=0)
+y_train_valid_e_l_n_up.tail()
+
+# Set RFE params
+n_features_to_select = 12
+step = 1
+
+# RFE with Logistic regression
+rfe_lg = RFE(estimator=LogisticRegression(C=min_C.loc['Logistic regression', 'Best hyperparam']), 
+             n_features_to_select=n_features_to_select, step=step, verbose=1)
+rfe_lg.fit(X_train_valid_e_l_n_up, y_train_valid_e_l_n_up)
+# Calculate the score on the test set
+#score = rfe_lg.score(X_test_e_l_n, y_test)
+score = rfe_lg.score(X_test_e_l_n_up, y_test_up)
+print('Logistic regression can explain {0:.1%} of the variance in the test set'.format(score))
+# Assign the support array to mask
+lg_mask = rfe_lg.support_
+
+# RFE with Gradient boosting 
+
+# Select 10 features with RFE on a GradientBoostingClassifier, drop 1 features on each step
+rfe_gb = RFE(estimator=GradientBoostingClassifier(n_estimators=int(min_C.loc['Gradient boosting', 'Best hyperparam']), random_state=0), 
+             n_features_to_select=n_features_to_select, step=step, verbose=1)
+rfe_gb.fit(X_train_valid_e_l_n_up, y_train_valid_e_l_n_up)
+# Calculate the score on the test set
+#score = rfe_gb.score(X_test_e_l_n, y_test)
+score = rfe_gb.score(X_test_e_l_n_up, y_test_up)
+print('Gradient boosting can explain {0:.1%} of the variance in the test set'.format(score))
+# Assign the support array to mask
+gb_mask = rfe_gb.support_
+
+# RFE with RandomForestClassifier
+rfe_rf = RFE(estimator=RandomForestClassifier(n_estimators=int(min_C.loc['Random Forest', 'Best hyperparam']), random_state=0), 
+             n_features_to_select=n_features_to_select, step=step, verbose=1)
+rfe_rf.fit(X_train_valid_e_l_n_up, y_train_valid_e_l_n_up)
+# Calculate the score on the test set
+#score = rfe_rf.score(X_test_e_l_n_up, y_test_up)
+#score = rfe_rf.score(X_test_e_l_n, y_test)
+score = rfe_rf.score(X_test_e_l_n_up, y_test_up)
+print('Random Forest can explain {0:.1%} of the variance in the test set'.format(score))
+# Assign the support array to mask
+rf_mask = rfe_rf.support_
+
+# Sum the votes of the three models
+votes = np.sum([lg_mask, rf_mask, gb_mask], axis=0)
+# Create a mask for features selected by all 3 models
+meta_mask = votes >= 2
+print('The following features are selected by >= 2 models:')
+X_train_valid_e_l_n_up.loc[:, meta_mask].columns
+
+# Apply dimensionality reduction on X
+X_train_mask = X_train_valid_e_l_n_up.loc[:, meta_mask]
+X_test_mask = X_test_e_l_n.loc[:, meta_mask]
+X_train_mask.head()
+
