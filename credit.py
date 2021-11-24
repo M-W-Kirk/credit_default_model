@@ -685,3 +685,61 @@ def model_run(model, clf, X=X_test, y=y_test):
 
 #%%
 
+# Logistic regression v1 (baseline)
+clf = LogisticRegression()
+clf.fit(X_train_e_l_n, y_train)
+final_model.append(model_run('Logistic regression (feature selected)', clf, X=X_test_e_l_n, y=y_test))
+
+#%%
+
+# Initialise kfold
+kf = KFold(n_splits=5, random_state=42, shuffle=True)
+def best_param_search(model, pipe, new_params,kf):
+    # Run search for best param
+
+    clf = GridSearchCV(pipe, param_grid=new_params, cv=kf, scoring='roc_auc',
+                            return_train_score=True)
+    # Fit to model with best hyper-param
+    clf.fit(X_train_e_l_n, y_train)
+    # Print best results
+    clf.cv_results_['mean_test_score'], clf.cv_results_['mean_train_score']
+    # Best score 
+    clf.best_score_
+    # Best param
+    clf.best_params_
+    # Print test result
+    y_test_predict = clf.best_estimator_.predict(X_test_e_l_n)
+    score = roc_auc_score(y_test, y_test_predict)
+    
+    # Print all stats
+    # final_model.append(model_run(model, clf, X=X_test, y=y_test))
+
+    #return clf.best_params_, score 
+    return clf, {'Model':model, 'Best hyperparam': clf.best_params_, 'AUC':round(score,5)}
+    #return {'Model':model, 'AUC':round(score,5)}
+
+#%%
+
+# Logistic regression 
+penalty = ['l1','l2','elasticnet','none']
+c_values = np.logspace(-7, 1, 10)
+# Define params
+params = {
+    'penalty': penalty,
+    'C': c_values,
+    'random_state': [0]
+}
+new_params = {'logisticregression__' + key: params[key] for key in params}
+
+# Create pipeline
+pipe = make_pipeline(SMOTE(random_state=42), 
+                              LogisticRegression(penalty='l1' ,C=0, random_state=0))
+# Search for best param
+lr_clf, lr = best_param_search('Logistic Regression (improved)', pipe, new_params,kf)
+# Print result
+final_model.append(model_run('Logistic Regression (improved)', lr_clf, X=X_test_e_l_n, y=y_test))
+# Append result
+final_result.append(lr)
+final_result
+final_model
+
