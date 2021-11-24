@@ -2,7 +2,7 @@
 
 ## Results
 
-![Final Results](.png)
+![Final Results](final_model_results_btrst_portfolio_7.png)
 
 ### References
 
