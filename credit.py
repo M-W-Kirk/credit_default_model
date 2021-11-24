@@ -534,3 +534,75 @@ X_train_mask = X_train_valid_e_l_n_up.loc[:, meta_mask]
 X_test_mask = X_test_e_l_n.loc[:, meta_mask]
 X_train_mask.head()
 
+#%%
+
+# Perform random forest
+rf = RandomForestClassifier(n_estimators=int(min_C.loc['Random Forest', 'Best hyperparam']), random_state=0)
+rf.fit(X_train_mask, y_train_valid_e_l_n_up)
+score = rf.score(X_test_mask, y_test)
+print('Random forest (dimension reduced) can explain {0:.1%} of the variance in the test set.'.format(score))
+# Predict the labels of the test data: y_pred
+y_pred = rf.predict(X_test_mask)
+# Generate the confusion matrix and classification report
+print(confusion_matrix(y_test, y_pred))
+print(classification_report(y_test, y_pred))
+
+# Perform gradient boosting
+gb = GradientBoostingClassifier(n_estimators=int(min_C.loc['Gradient boosting', 'Best hyperparam']), random_state=0)
+gb.fit(X_train_mask, y_train_valid_e_l_n_up)
+score = gb.score(X_test_mask, y_test)
+print('Gradient boosting (dimension reduced) can explain {0:.1%} of the variance in the test set.'.format(score))
+# Predict the labels of the test data: y_pred
+y_pred = gb.predict(X_test_mask)
+# Generate the confusion matrix and classification report
+print(confusion_matrix(y_test, y_pred))
+print(classification_report(y_test, y_pred))
+
+#%%
+
+# Retrieve feature importance from the tree-based models
+col_names = X_test_mask.columns
+model_rank = list()
+def model_impt(model, label):
+    tmp = dict()
+    importances = model.feature_importances_
+    indices = np.argsort(importances)[::-1]
+    #print(importances)
+    # Print the feature ranking
+    print(f"Feature ranking ({label}):")
+    tmp['Model'] = label
+    for f in range(len(indices)):
+        print("%d. %s (%f)" % (f + 1, col_names[indices[f]], importances[indices[f]]))
+        tmp[col_names[indices[f]]] = importances[indices[f]]
+    print (' ')
+    return tmp
+
+# Random forest
+model_rank.append( model_impt(rf, 'Random forest'))
+# Gradient boosting
+model_rank.append( model_impt(gb, 'Gradient boosting'))
+
+# Print min C
+model_rank = pd.DataFrame(model_rank)
+model_rank.set_index('Model', inplace=True)
+model_rank
+
+#%%
+
+# Correlation of numerical attributes
+plt.figure(figsize=(10, 2))
+plt.title('Feature importance')
+sns.heatmap(model_rank, annot=True, fmt='.2f', cmap='RdYlGn')
+plt.yticks(rotation=360)
+plt.show()
+
+#%%
+
+# Partial plot
+fig, ax = plt.subplots(figsize=(20, 30))
+ax.set_title("Random forest Model - Partial plot")
+#tree_disp = plot_partial_dependence(rfe_rf, X_train, list(range(0, 18)), ax=ax)
+tree_disp = plot_partial_dependence(rf, X_train_mask, list(range(0, 11)), ax=ax)
+
+#%%
+
