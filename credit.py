@@ -406,4 +406,66 @@ def lowest_err(model, C_values, train_errs, valid_errs):
     return {'Model':model, 'Best hyperparam': min_C}
 
 #%%
+# A logistic regression 
+min_C = list()
 
+# Train and validaton errors initialized as empty list
+train_errs = list()
+valid_errs = list()
+C_values = np.logspace(-6, -2, 21)
+
+# Loop over values of C_value
+for C_value in C_values:
+    # Create LogisticRegression object and fit
+    clf = LogisticRegression(C=C_value)
+    clf.fit(X_train_e_l_n_up, y_train_up)
+    
+    # Evaluate error rates and append to lists
+    train_errs.append( 1.0 - clf.score(X_train_e_l_n_up, y_train_up) )
+    valid_errs.append( 1.0 - clf.score(X_valid_e_l_n_up, y_valid_up) )
+
+# Plot and find min C
+min_C.append( lowest_err('Logistic regression', C_values, train_errs, valid_errs) )
+
+#%%
+# B gradient boosting
+# Train and validaton errors initialized as empty list
+train_errs = list()
+valid_errs = list()
+C_values = [int(x) for x in np.linspace(1, 900, 21)]
+
+# Loop over values of C_value
+for C_value in C_values:
+    # Create LogisticRegression object and fit
+    clf = GradientBoostingClassifier(n_estimators=C_value)
+    clf.fit(X_train_e_l_n_up, y_train_up)
+    
+    # Evaluate error rates and append to lists
+    train_errs.append( 1.0 - clf.score(X_train_e_l_n_up, y_train_up) )
+    valid_errs.append( 1.0 - clf.score(X_valid_e_l_n_up, y_valid_up) )
+
+# Plot and find min C
+min_C.append( lowest_err('Gradient boosting', C_values, train_errs, valid_errs) )
+
+#%%
+
+# C random forest
+# Train and validaton errors initialized as empty list
+train_errs = list()
+valid_errs = list()
+C_values = [int(x) for x in np.linspace(1, 900, 21)]
+
+# Loop over values of C_value
+for C_value in C_values:
+    # Create LogisticRegression object and fit
+    clf = RandomForestClassifier(n_estimators=C_value,random_state=0)
+    clf.fit(X_train_e_l_n_up, y_train_up)
+    
+    # Evaluate error rates and append to lists
+    train_errs.append( 1.0 - clf.score(X_train_e_l_n_up, y_train_up) )
+    valid_errs.append( 1.0 - clf.score(X_valid_e_l_n_up, y_valid_up) )
+
+# Plot and find min C
+min_C.append( lowest_err('Random Forest', C_values, train_errs, valid_errs) )
+
+#%%
