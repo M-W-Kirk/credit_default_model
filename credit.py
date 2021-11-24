@@ -743,3 +743,48 @@ final_result.append(lr)
 final_result
 final_model
 
+#%%
+
+### Random forest 
+n_estimators = np.linspace(600,800, num=10)
+# Define rf params
+params = {
+    'n_estimators': [int(x) for x in n_estimators],
+    'max_depth': [5, 15, 20],
+    'random_state': [0]
+}
+new_params = {'randomforestclassifier__' + key: params[key] for key in params}
+# Create pipeline
+pipe = make_pipeline(SMOTE(random_state=42), 
+                              RandomForestClassifier(n_estimators=375, random_state=0))
+# Search for best param
+rf_clf, rf = best_param_search('Random forest (improved)', pipe, new_params,kf)
+# Print result
+final_model.append(model_run('Random forest (improved)', rf_clf, X=X_test_e_l_n, y=y_test))
+
+# Append result
+final_result.append(rf)
+final_result
+final_model
+
+#%%
+
+# Present result in table 
+final_model_df = pd.DataFrame(final_model)
+final_model_df.set_index('Model', inplace=True)
+#final_model_df.head()
+
+#%%
+
+# Print model label
+index = ['Model 1','Model 2','Model 3']
+conclusion = final_model_df.copy()
+conclusion['No.'] = index
+conclusion.reset_index(inplace=True)
+conclusion.set_index('No.',inplace=True)
+conclusion
+
+# Rename col
+conclusion.rename(columns={'Model':'Description'}, inplace=True)
+#conclusion
+conclusion
