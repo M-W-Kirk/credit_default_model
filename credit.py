@@ -606,3 +606,82 @@ tree_disp = plot_partial_dependence(rf, X_train_mask, list(range(0, 11)), ax=ax)
 
 #%%
 
+# Correlation of numerical attributes
+plt.figure(figsize=(8, 8))
+plt.title('Correlation of important features')
+sns.heatmap(X_train_mask.corr(), annot=True, fmt='.2f', cmap='RdYlGn')
+plt.show()
+
+#%%
+
+# Define list to store result 
+final_result = list()
+# Define list to store result 
+final_model = list()
+def model_run(model, clf, X=X_test, y=y_test):
+
+    # Evaluate error rates and append to lists
+    y_test_predict = clf.predict(X)
+    auc = roc_auc_score(y, y_test_predict)
+    precision =precision_score(y, y_test_predict)
+    recall = recall_score(y, y_test_predict)
+    accuracy = clf.score(X, y)
+
+    # Print classification report
+    print(f'== {model} - Classification report ==')
+    print(classification_report(y, y_test_predict))
+    
+    # Plot confusion matrix
+    class_names=[0,1] # name  of classes
+    fig, ax = plt.subplots()
+    tick_marks = np.arange(len(class_names))
+    plt.xticks(tick_marks, class_names)
+    plt.yticks(tick_marks, class_names)
+    # create heatmap
+    sns.heatmap(pd.DataFrame(confusion_matrix(y, y_test_predict)), annot=True, cmap="YlGnBu" ,fmt='g')
+    ax.xaxis.set_label_position("top")
+    plt.tight_layout()
+    plt.title(f'{model}- Confusion matrix', y=1.1)
+    plt.ylabel('Actual label')
+    plt.xlabel('Predicted label')   
+    plt.show()
+    
+    # Plot ROC curve
+    # Compute predicted probabilities: y_pred_prob
+    y_pred_prob = clf.predict_proba(X)[:,1]
+    # Generate ROC curve values: fpr, tpr, thresholds
+    fpr, tpr, thresholds= roc_curve(y_test, y_pred_prob)
+    # Plot ROC curve
+    plt.plot([0, 1], [0, 1], 'k--', label='Random classifier')
+    plt.plot(fpr, tpr, marker='.', label=model)
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title(f'{model} - ROC curve')
+    plt.annotate(f'AUC ={round(auc, 5)} ', xy=(0.7, 0.5),fontsize=12,)
+    # show the legend
+    plt.legend()    
+    plt.show()
+    
+    # Plot precision recall curve
+    precision_, recall_, _ = precision_recall_curve(y_test, y_pred_prob)
+    # Random classifier is one which randomly predicts a class and is the ratio of the ones in the dataset
+    random_clf = y_test[y_test==1].count() / len(y_test) #len(y_test[y_test==1]) / len(y_test)
+    plt.plot([0, 1], [random_clf, random_clf], linestyle='--', label='Average precision')
+    plt.plot(recall_, precision_, marker='.', label=model)
+    # axis labels
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title(f'{model} - Precision recall curve')
+    # show the legend
+    plt.legend()
+    # show the plot
+    plt.show()
+
+    return {'Model':model, \
+            'Accuracy': round(accuracy,5) , \
+            'Precision':round(precision,5) , \
+            'Recall':round(recall,5), \
+            'AUC':round(auc,5)}
+
+#%%
+
