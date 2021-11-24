@@ -361,3 +361,49 @@ sns.barplot(x='PC',y='Variance Explained',
 plt.xticks(rotation=45)
 plt.show()
 
+#%%
+
+lt.figure(figsize=(8, 8))
+# Instantiate, fit and transform
+#pca2 = PCA()
+#principalComponents2 = pca2.fit_transform(X_train_valid_e_n_up)
+
+# Assign variance explained
+var = pca.explained_variance_ratio_
+
+# Plot cumulative variance
+cumulative_var = np.cumsum(var)*100
+plt.plot(cumulative_var,'k-o',markerfacecolor='None',markeredgecolor='k')
+plt.title('Principal Component Analysis \n Cumulative Proportion of Variance Explained',fontsize=12)
+plt.xlabel("Principal Component",fontsize=12)
+plt.ylabel("Cumulative Proportion of Variance ",fontsize=12)
+plt.show()
+
+#%%
+
+# Function to find lowest C and plot the result
+def lowest_err(model, C_values, train_errs, valid_errs):
+    
+    # Print lowest valid err 
+    C_values_df = pd.DataFrame(C_values)
+    valid_errs_df = pd.DataFrame(valid_errs)
+    min_err = min(valid_errs_df[0])
+    min_idx = valid_errs_df[0].idxmin(axis = 1)
+    min_C = C_values_df.loc[min_idx, 0]
+    print(f'Min validation error ({model})  occur at C={round(min_C, 5)} and error = {round(min_err,5)}')
+
+    # Plot results
+    plt.figure(figsize=(8,5))
+    plt.semilogx(C_values, train_errs, C_values, valid_errs)
+    plt.annotate(f'Min error occur at Hyper-param ={round(min_C, 5)} and error = {round(min_err,5)}', xy=(min_C, min_err),fontsize=12,arrowprops=dict(facecolor='red', shrink=0.5),)
+    plt.legend(("train", "validation"))
+    plt.title(model)
+    plt.xlabel('Hyper-parameter')
+    plt.ylabel('Error')
+    plt.show()
+    
+    # Return
+    return {'Model':model, 'Best hyperparam': min_C}
+
+#%%
+
